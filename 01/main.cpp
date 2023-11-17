@@ -9,27 +9,31 @@ using namespace std;
 struct Block
 {
     sf::RectangleShape shape;
-    sf::Vector2f position = { 300, 400 }; //заменить позже на константу начальных координат появляющегося блока на кране
+    sf::Vector2f position; //заменить позже на константу начальных координат появляющегося блока на кране
     sf::Vector2f size = { 200, 100 };
 
-    float craneBlockSpeed = 1100.0f;
+    float craneBlockSpeed = 1000.0f;
     float fallenBlockSpeed = 600.0f;
-
-    bool isFalling = false;
 };
 
-void initBlock(Block& block) {    
+struct GameEvents
+{
+    bool isNewBlock = true;
+    bool isBlockFalling = false;
+    float dTime;
+};
+
+Block initBlock() {
+    Block block;
     block.shape.setSize(block.size); 
-    block.shape.setPosition(block.position); 
-    block.shape.setFillColor(sf::Color::Red); 
+    block.shape.setPosition({0, 0}); 
+    block.shape.setFillColor(sf::Color::Red);
+    return block;
 }
 
-void gameProcess() {
-    //
-}
-
-void updateBlockOnCrane(sf::VideoMode desktopMode, Block& block, float dTime) {
-    if (!block.isFalling) { 
+void updateBlockOnCrane(sf::VideoMode desktopMode, Block& block, GameEvents& gameEvents) {
+    if (!gameEvents.isBlockFalling) { 
+        float dTime = gameEvents.dTime;
         const float speed = block.craneBlockSpeed;
         const float offset = speed * dTime;
 
@@ -50,29 +54,28 @@ void updateBlockOnCrane(sf::VideoMode desktopMode, Block& block, float dTime) {
     }
 }
 
-void updateFallingBlock(sf::VideoMode desktopMode, Block& block, float dTime) {
-    if (block.isFalling) {
+void updateFallingBlock(sf::VideoMode desktopMode, Block& block, vector<Block>& building, GameEvents& gameEvents) {
+    if (gameEvents.isBlockFalling) {
+        float dTime = gameEvents.dTime;
         const float speed = block.fallenBlockSpeed;
         const float offset = speed * dTime;
 
-        const float screenHeight = desktopMode.height;
         const float blockPositionY = block.position.y;
         const float blockHeight = block.size.y;
+        const float buildingHeight = desktopMode.height - building.size() * blockHeight;
 
-        if (blockPositionY + blockHeight + offset >= screenHeight) {
-            block.position = { 300, 400 }; // заменить позже на константу начальных координат появляющегося блока на кране
-            block.isFalling = false;
+        if (blockPositionY + blockHeight + offset >= buildingHeight) {
+            gameEvents.isBlockFalling = false;
+            building.push_back(block);
+            gameEvents.isNewBlock = true;
         }
-        else
-        {
-            block.position.y = blockPositionY + offset;
-            block.shape.setPosition(block.position);
-        }
+        block.position.y = blockPositionY + offset;
+        block.shape.setPosition(block.position);
     }
 }
 
 
-void pollEvents(sf::RenderWindow& window, Block& block) {
+void pollEvents(sf::RenderWindow& window, GameEvents& gameEvents) {
   
     sf::Event event;
     while (window.pollEvent(event)){
@@ -82,8 +85,8 @@ void pollEvents(sf::RenderWindow& window, Block& block) {
             window.close();
             break;
         case sf::Event::KeyPressed:
-            if ((event.key.code == sf::Keyboard::Return) && (!block.isFalling)) {
-                block.isFalling = true;
+            if ((event.key.code == sf::Keyboard::Return) && (!gameEvents.isBlockFalling)) {
+                gameEvents.isBlockFalling = true;
             }
         default:
             break;
@@ -91,21 +94,41 @@ void pollEvents(sf::RenderWindow& window, Block& block) {
     }
 }
 
-void redrawFrame(sf::RenderWindow& window, Block& block)
+void redrawFrame(sf::RenderWindow& window, Block& block, vector<Block>& building)
 {
     window.clear();
+    for (size_t i = 0; i < building.size(); i++) {
+        window.draw(building[i].shape);
+    }
     window.draw(block.shape);
     window.display();
 }
 
-int main() {
 
-    // const MAX_BLOCKS = 5;
+void gameProcess(sf::VideoMode desktopMode, GameEvents& gameEvents, vector<Block>& building, Block& block) {
+    updateBlockOnCrane(desktopMode, block, gameEvents);
+    updateFallingBlock(desktopMode, block, building, gameEvents);    
+}
+
+void initStartBlock(sf::VideoMode desktopMode, vector<Block>& building) {
+    Block startBlock;
+    const sf::Vector2f basePosition = { 
+        (static_cast<float>(desktopMode.width) - startBlock.size.x) / 2, 
+        static_cast<float>(desktopMode.height) - startBlock.size.y
+    };
+    startBlock.position = basePosition;
+    startBlock.shape.setSize(startBlock.size); 
+    startBlock.shape.setPosition(basePosition); 
+    startBlock.shape.setFillColor(sf::Color::Red); 
+    
+    building.push_back(startBlock);
+}
+
+int main() {
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
-
     sf::RenderWindow window(
         desktopMode, 
         "BRICKSTER",
@@ -114,19 +137,25 @@ int main() {
     );
 
     sf::Clock clock;
+    GameEvents gameEvents; 
+    vector<Block> building;
 
-    Block block;
-    initBlock(block);
-    // vector<Block> building;
+    initStartBlock(desktopMode, building);
 
-
+    Block newBlock;
 
     while (window.isOpen()) {
         float dTime = clock.restart().asSeconds();
-        pollEvents(window, block);
-        updateBlockOnCrane(desktopMode, block, dTime);
-        updateFallingBlock(desktopMode, block, dTime);
-        redrawFrame(window, block);
+        gameEvents.dTime = dTime;
+
+        if (gameEvents.isNewBlock) {
+            newBlock = initBlock(); 
+            gameEvents.isNewBlock = false;
+        }
+
+        pollEvents(window, gameEvents);
+        gameProcess(desktopMode, gameEvents, building, newBlock);
+        redrawFrame(window, newBlock, building);
     }
 
 }
