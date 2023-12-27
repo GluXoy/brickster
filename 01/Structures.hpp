@@ -8,10 +8,6 @@ struct Block
     sf::RectangleShape shape;
     sf::Vector2f position;
     sf::Vector2f size;
-    sf::Color craneBlockColor = sf::Color(50, 240, 255);
-    sf::Color buildingColor = sf::Color(50, 140, 255);
-    float craneBlockSpeed = 500.0f;
-    float fallenBlockSpeed = 700.0f;
 };
 
 struct BrokenBlockEvents {
@@ -37,36 +33,92 @@ struct CraneCable
     sf::Color color = sf::Color(128, 128, 128);
 };
 
-struct GameEvents
-{
-    int blockCounter = 1;
-    const float unbrokenPercent = 0.085;
-    sf::VideoMode desktopMode;
-    sf::RectangleShape darknessRect;
-    sf::RectangleShape scoreRectangle;
-    sf::Font font;
-    sf::Text scoreText;
-    bool isNewBlock = true;
-    bool isBlockFalling = false;
-    float dTime;
-    float leftDropZone;
-    float rightDropZone;
-    CraneCable craneCable;
+struct GameAssets {
     sf::Texture startBlockTexture;
     sf::Texture brokenBlockTexture;
     sf::Texture blockTexture;
     sf::Texture heartTexture;
     sf::Texture craneTexture;
     sf::Texture flashTexture;
-    sf::Sprite flash;
-    sf::Sprite crane;
-    Hook hook;
+    sf::Texture bombTexture;
+    sf::Texture explosionTexture;
+};
+
+struct GameState {
+    int blockCounter = 1;
+    const float unbrokenPercent = 0.08;
+    bool isNewBlock = true;
+    bool isBlockFalling = false;
+    bool showFlash = false;
+    bool isShowScoreAnimation = false;
+    bool isUpdateScoreAnimationPosFor10 = false;
+    bool isUpdateScoreAnimationPosFor100 = false;
+    bool isShowAntiBonusAnimation = false;
+    bool isShowExplosion = false;
+    int currentFontSize = 0;
+    int targetFontSize = 450;
+    float leftDropZone;
+    float rightDropZone;
+    CraneCable craneCable;
     BrokenBlockEvents brokenBlockEvents;
     int lifes = 3;
     int maxViewBlocks = 13;
+};
+
+struct AntiBonus {
+    sf::Sprite shape;
+    sf::Vector2f position;
+    sf::Vector2f size = { 120, 130 };
+    sf::Vector2f textureRectSize = { 300, 330 };
+    float currentFrame;
+    std::vector<int> list;
+};
+
+struct GameVisuals {
+    sf::RectangleShape darknessRect;
+    sf::RectangleShape scoreRectangle;
+    sf::Font font;
+    sf::Text scoreText;
+    sf::Text animatedScoreText;
+    sf::Sprite flash;
+    sf::Sprite crane;
+    sf::Sprite explosion;
+    AntiBonus bomb;
+    Hook hook;
     sf::RectangleShape box;
     std::vector<sf::Sprite> hearts;
-    //
+};
+
+struct GameTimers {
     sf::Clock flashTimer;
-    bool showFlash = false;
-}; 
+    sf::Clock scoreTimer;
+    sf::Clock bombTimer;
+    sf::Clock explosionTimer;
+    float scoreAnimationDuration = 0.5;
+    float bombAnimationDuration = 4.5;
+    float bombAnimationDelay = 0.95;
+    float explosionAnimationDuration = 0.5;
+    float dTime;
+};
+
+struct BlockParams
+{
+    const sf::Vector2f startSize = { 190, 50 };
+    sf::Vector2f startPosition;
+    const float minWidth = 8.0f;
+    sf::Vector2f position;
+    sf::Color craneBlockColor = sf::Color(50, 240, 255);
+    sf::Color buildingColor = sf::Color(50, 140, 255);
+    float startCraneBlockSpeed = 500.0f;
+    float craneBlockSpeed = startCraneBlockSpeed;
+    float fallenBlockSpeed = 600.0f;
+};
+
+struct GameEvents {
+    sf::VideoMode desktopMode;
+    BlockParams blockParams;
+    GameAssets assets;
+    GameState state;
+    GameVisuals visuals;
+    GameTimers timers;
+};

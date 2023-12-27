@@ -4,9 +4,11 @@ set(SOURCE_FILES
     Structures.hpp
     StartInit.hpp
     GameLogic.hpp
+    Animation.hpp
     main.cpp
     StartInit.cpp
     GameLogic.cpp
+    Animation.cpp
 )
 
 set(SFML_STATIC_LIBRARIES TRUE)

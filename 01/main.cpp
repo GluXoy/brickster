@@ -27,10 +27,10 @@ int main() {
     GameEvents gameEvents;
     gameEvents.desktopMode = desktopMode;
 
-    const float DARKNESS_DEGREE = 0.75;
+    const float DARKNESS_DEGREE = 0.8;
     sf::RectangleShape darknessRect(sf::Vector2f(window.getSize().x, window.getSize().y));
     darknessRect.setFillColor(sf::Color(0, 0, 0, static_cast<sf::Uint8>(DARKNESS_DEGREE * 255)));
-    gameEvents.darknessRect = darknessRect;
+    gameEvents.visuals.darknessRect = darknessRect;
 
     vector<Block> building;
 
@@ -38,13 +38,13 @@ int main() {
     
     Block newBlock;
 
-    while (window.isOpen() && gameEvents.lifes) {
+    while (window.isOpen() && gameEvents.state.lifes) {
         float dTime = clock.restart().asSeconds();
-        gameEvents.dTime = dTime;
+        gameEvents.timers.dTime = dTime;
 
-        if (gameEvents.isNewBlock) {
+        if (gameEvents.state.isNewBlock) {
             newBlock = initBlock(building[building.size() - 1], gameEvents);
-            gameEvents.isNewBlock = false;
+            gameEvents.state.isNewBlock = false;
         }
 
         pollEvents(window, gameEvents, newBlock);
